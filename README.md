@@ -1,4 +1,4 @@
-# Immich Photo Sync
+# Immich Vault Sync
 
 Sync selected image folders from Obsidian to Immich, then replace wiki links with Immich asset links so notes keep pointing at the uploaded media.
 
