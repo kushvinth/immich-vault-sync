@@ -294,7 +294,7 @@ async function readUploadCache(app: App): Promise<Record<string, UploadRecord>> 
 
     const cacheData = parsed as Partial<UploadCacheData>;
     if (cacheData.assets && typeof cacheData.assets === "object" && !Array.isArray(cacheData.assets)) {
-      return cacheData.assets as Record<string, UploadRecord>;
+      return cacheData.assets;
     }
     return parsed as Record<string, UploadRecord>;
   } catch (error) {

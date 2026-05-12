@@ -35,20 +35,20 @@ export class ImmichClient {
 
   async testConnection(): Promise<void> {
     const aboutUrl = `${this.baseUrl}/api/server/about`;
-    console.log("[Immich] Testing connection", { url: aboutUrl });
+    debugLog("Testing connection", { url: aboutUrl });
     try {
-      const result = await requestUrl({
+      const result = (await requestUrl({
         url: aboutUrl,
         headers: this.authHeaders(),
-      });
+      })) as RequestJsonResponse;
 
-      console.log("[Immich] Connection response", { status: result.status });
+      debugLog("Connection response", { status: result.status });
       if (result.status === 200) {
-        new Notice("Immich connection successful");
+        new Notice("Connection successful.");
         return;
       }
     } catch (error) {
-      console.error("[Immich] Connection failed", error);
+      errorLog("Connection failed", error);
     }
 
     new Notice("Failed to connect to Immich. Check the console for details.");
@@ -56,27 +56,27 @@ export class ImmichClient {
 
   async ensureAlbum(): Promise<string> {
     if (this.settings.albumId) {
-      console.log("[Immich] Using configured album ID", { albumId: this.settings.albumId });
+      debugLog("Using configured album ID", { albumId: this.settings.albumId });
       const existing = await this.getAlbumById(this.settings.albumId);
       if (existing) {
-        console.log("[Immich] Album found", { albumId: existing.id, albumName: existing.albumName });
+        debugLog("Album found", { albumId: existing.id, albumName: existing.albumName });
         return existing.id;
       }
-      console.warn("[Immich] Album ID not found, falling back to name lookup", {
+	      warnLog("Album ID not found, falling back to name lookup", {
         albumId: this.settings.albumId,
       });
     }
 
-    console.log("[Immich] Looking up album by name", { albumName: this.settings.albumName });
+    debugLog("Looking up album by name", { albumName: this.settings.albumName });
     const byName = await this.findAlbumByName(this.settings.albumName);
     if (byName) {
-      console.log("[Immich] Album found", { albumId: byName.id, albumName: byName.albumName });
+	      debugLog("Album found", { albumId: byName.id, albumName: byName.albumName });
       return byName.id;
     }
 
-    console.log("[Immich] Creating album", { albumName: this.settings.albumName });
+	    debugLog("Creating album", { albumName: this.settings.albumName });
     const created = await this.createAlbum(this.settings.albumName);
-    console.log("[Immich] Album created", { albumId: created.id, albumName: created.albumName });
+	    debugLog("Album created", { albumId: created.id, albumName: created.albumName });
     return created.id;
   }
 
@@ -85,7 +85,7 @@ export class ImmichClient {
     const modifiedAt = new Date(file.stat.mtime).toISOString();
     const deviceAssetId = `${file.path}-${file.stat.mtime}`;
 
-    console.log("[Immich] Uploading asset", {
+    debugLog("Uploading asset", {
       filename: file.name,
       path: file.path,
       size: file.stat.size,
@@ -110,7 +110,7 @@ export class ImmichClient {
 
     let result;
     try {
-      result = await requestUrl({
+      result = (await requestUrl({
         url: `${this.baseUrl}/api/assets`,
         method: "POST",
         headers: {
@@ -118,9 +118,9 @@ export class ImmichClient {
           "Content-Type": `multipart/form-data; boundary=${boundary}`,
         },
         body: toArrayBuffer(body),
-      });
+      })) as RequestJsonResponse;
     } catch (error) {
-      console.error("[Immich] Upload request failed", {
+      errorLog("Upload request failed", {
         path: file.path,
         deviceAssetId,
         error,
@@ -128,7 +128,7 @@ export class ImmichClient {
       throw error;
     }
 
-    console.log("[Immich] Upload response", { status: result.status, assetId: result.json?.id });
+      debugLog("Upload response", { status: result.status, assetId: extractUploadId(result.json) });
 
     const payload = parseUploadPayload(result.json);
     if (!payload?.id) {
@@ -139,7 +139,7 @@ export class ImmichClient {
   }
 
   async addAssetToAlbum(albumId: string, assetId: string): Promise<void> {
-    console.log("[Immich] Adding asset to album", { albumId, assetId });
+	    debugLog("Adding asset to album", { albumId, assetId });
     await requestUrl({
       url: `${this.baseUrl}/api/albums/${albumId}/assets`,
       method: "PUT",
@@ -152,33 +152,38 @@ export class ImmichClient {
   }
 
   private async findAlbumByName(name: string): Promise<{ id: string; albumName: string } | null> {
-    console.log("[Immich] Fetching album list", { isOwned: true });
-    const result = await requestUrl({
+    debugLog("Fetching album list", { isOwned: true });
+    const result = (await requestUrl({
       url: `${this.baseUrl}/api/albums?isOwned=true`,
       headers: this.authHeaders(),
-    });
+    })) as RequestJsonResponse;
 
     if (!Array.isArray(result.json)) {
       return null;
     }
 
-    const match = result.json.find((album) => album.albumName === name);
-    return match ? { id: match.id, albumName: match.albumName } : null;
+    for (const album of result.json) {
+      if (isAlbumRecord(album) && album.albumName === name) {
+        return album;
+      }
+    }
+
+    return null;
   }
 
   private async getAlbumById(id: string): Promise<{ id: string; albumName: string } | null> {
     try {
-      console.log("[Immich] Fetching album by ID", { albumId: id });
-      const result = await requestUrl({
+	      debugLog("Fetching album by ID", { albumId: id });
+      const result = (await requestUrl({
         url: `${this.baseUrl}/api/albums/${id}`,
         headers: this.authHeaders(),
-      });
+      })) as RequestJsonResponse;
 
       if (result.status !== 200) {
         return null;
       }
 
-      return { id: result.json?.id, albumName: result.json?.albumName };
+      return isAlbumRecord(result.json) ? result.json : null;
     } catch {
       return null;
     }
@@ -186,7 +191,7 @@ export class ImmichClient {
 
   private async createAlbum(name: string): Promise<{ id: string; albumName: string }>
   {
-    const result = await requestUrl({
+    const result = (await requestUrl({
       url: `${this.baseUrl}/api/albums`,
       method: "POST",
       headers: {
@@ -194,15 +199,15 @@ export class ImmichClient {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ albumName: name }),
-    });
+    })) as RequestJsonResponse;
 
-    console.log("[Immich] Create album response", { status: result.status, albumId: result.json?.id });
+	    debugLog("Create album response", { status: result.status, albumId: extractAlbumId(result.json) });
 
-    if (!result.json?.id) {
+	    if (!isAlbumRecord(result.json)) {
       throw new Error("Failed to create Immich album");
     }
 
-    return { id: result.json.id, albumName: result.json.albumName };
+    return result.json;
   }
 
   private authHeaders(): Record<string, string> {
@@ -292,21 +297,65 @@ function guessMimeType(extension: string): string {
   return map[lower] ?? "application/octet-stream";
 }
 
-function parseUploadPayload(payload: unknown): UploadResult | undefined {
-  if (!payload || typeof payload !== "object") {
+type RequestJsonResponse = {
+  status: number;
+  json: unknown;
+};
+
+type AlbumRecord = {
+  id: string;
+  albumName: string;
+};
+
+type UploadPayload = {
+  id: string;
+  status: UploadStatus;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isAlbumRecord(value: unknown): value is AlbumRecord {
+  return isRecord(value) && typeof value.id === "string" && typeof value.albumName === "string";
+}
+
+function extractAlbumId(payload: unknown): string | undefined {
+  return isAlbumRecord(payload) ? payload.id : undefined;
+}
+
+function extractUploadId(payload: unknown): string | undefined {
+  if (!isRecord(payload)) {
     return undefined;
   }
 
-  const data = payload as Record<string, unknown>;
-  const status = (data.status === "duplicate" ? "duplicate" : "created") as UploadStatus;
   const idCandidates = [
-    data.id,
-    data.assetId,
-    data.duplicateAssetId,
-    data.existingAssetId,
-    (data.asset as Record<string, unknown> | undefined)?.id,
-    (data.duplicate as Record<string, unknown> | undefined)?.id,
-    (data.existing as Record<string, unknown> | undefined)?.id,
+    payload.id,
+    payload.assetId,
+    payload.duplicateAssetId,
+    payload.existingAssetId,
+    isRecord(payload.asset) ? payload.asset.id : undefined,
+    isRecord(payload.duplicate) ? payload.duplicate.id : undefined,
+    isRecord(payload.existing) ? payload.existing.id : undefined,
+  ];
+
+  return idCandidates.find((value): value is string => typeof value === "string" && value.length > 0);
+}
+
+function parseUploadPayload(payload: unknown): UploadPayload | undefined {
+  if (!isRecord(payload)) {
+    return undefined;
+  }
+
+  const status = payload.status === "duplicate" ? "duplicate" : "created";
+  const idCandidates = [
+    payload.id,
+    payload.assetId,
+    payload.duplicateAssetId,
+    payload.existingAssetId,
+    isRecord(payload.asset) ? payload.asset.id : undefined,
+    isRecord(payload.duplicate) ? payload.duplicate.id : undefined,
+    isRecord(payload.existing) ? payload.existing.id : undefined,
   ];
   const id = idCandidates.find((value): value is string => typeof value === "string" && value.length > 0);
   if (!id) {
@@ -314,4 +363,28 @@ function parseUploadPayload(payload: unknown): UploadResult | undefined {
   }
 
   return { id, status };
+}
+
+function debugLog(message: string, details?: unknown): void {
+  if (details === undefined) {
+    console.debug(`[Immich] ${message}`);
+    return;
+  }
+  console.debug(`[Immich] ${message}`, details);
+}
+
+function warnLog(message: string, details?: unknown): void {
+  if (details === undefined) {
+    console.warn(`[Immich] ${message}`);
+    return;
+  }
+  console.warn(`[Immich] ${message}`, details);
+}
+
+function errorLog(message: string, details?: unknown): void {
+  if (details === undefined) {
+    console.error(`[Immich] ${message}`);
+    return;
+  }
+  console.error(`[Immich] ${message}`, details);
 }

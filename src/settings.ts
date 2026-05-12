@@ -55,8 +55,8 @@ export class ImmichSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Set Immich URL")
-			.setDesc("Use the base URL for your Immich instance, with no trailing slash.")
+			.setName("Immich url")
+			.setDesc("Use the base url for your Immich instance, with no trailing slash.")
 			.addText((text) =>
 				text
 					.setPlaceholder("https://immich.example.com")
@@ -68,7 +68,7 @@ export class ImmichSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Immich API key")
+			.setName("Immich api key")
 			.setDesc("Needs permissions for asset upload and album management.")
 			.addText((text) => {
 				text.inputEl.type = "password";
@@ -93,7 +93,7 @@ export class ImmichSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Album ID (optional)")
+			.setName("Album id (optional)")
 			.setDesc("If set, the plugin will use this album directly.")
 			.addText((text) =>
 				text
@@ -122,10 +122,10 @@ export class ImmichSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Image folder")
-			.setDesc("Vault-relative path (example: meta/media).")
+			.setDesc("Vault-relative path (for example, meta/media).")
 			.addText((text) =>
 				text
-					.setPlaceholder("For example, Meta/Media")
+					.setPlaceholder("For example, meta/media")
 					.setValue(this.plugin.settings.imageFolder)
 					.onChange(async (value) => {
 						this.plugin.settings.imageFolder = value.trim();

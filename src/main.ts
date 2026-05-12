@@ -13,7 +13,7 @@ export default class ImmichUploaderPlugin extends Plugin {
 
     this.addCommand({
       id: "immich-upload-folder",
-      name: "Immich: Upload images from configured folder and replace links",
+        name: "Immich: upload images from configured folder and replace links",
       callback: async () => {
         await uploadFolderImages(this.app, this.settings, this.saveSettings.bind(this));
       },
@@ -21,7 +21,7 @@ export default class ImmichUploaderPlugin extends Plugin {
 
     this.addCommand({
       id: "immich-test-connection",
-      name: "Immich: Test connection",
+        name: "Immich: test connection",
       callback: async () => {
         await this.testConnection();
       },
@@ -30,7 +30,7 @@ export default class ImmichUploaderPlugin extends Plugin {
 
   async testConnection(): Promise<void> {
     if (!this.settings.immichUrl || !this.settings.immichApiKey) {
-      new Notice("Immich URL and API key are required.");
+      new Notice("Missing Immich url and api key.");
       return;
     }
 
