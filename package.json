@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "immich-photo-sync",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Sync vault images to Immich and replace wiki links with public asset URLs.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
@@ -10,8 +10,9 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint ."
 	},
-	"keywords": [],
-	"license": "0-BSD",
+	"keywords": ["obsidian", "immich", "plugin", "sync", "photos"],
+	"author": "kushvinth",
+	"license": "ISC",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",

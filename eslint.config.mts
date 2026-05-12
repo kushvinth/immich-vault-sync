@@ -22,9 +22,16 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		files: ["src/**/*.ts"],
+		rules: {
+			"obsidianmd/ui/sentence-case": "off",
+		},
+	},
 	globalIgnores([
 		"node_modules",
 		"dist",
+		"working-immich-plug",
 		"esbuild.config.mjs",
 		"eslint.config.js",
 		"version-bump.mjs",

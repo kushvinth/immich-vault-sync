@@ -1,11 +1,9 @@
 {
-	"id": "sample-plugin",
-	"name": "Sample Plugin",
+	"id": "immich-photo-sync",
+	"name": "Immich Photo Sync",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Upload images from a configured vault folder to Immich and replace wiki links with public asset URLs.",
+	"author": "kushvinth",
 	"isDesktopOnly": false
 }
